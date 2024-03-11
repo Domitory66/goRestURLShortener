@@ -1,13 +1,9 @@
 package repository
 
-import (
-	"url-shortener/pkg/storage"
-)
-
 type Repository struct {
-	storage.Storage
+	Storage
 }
 
-func NewRepository(s storage.Storage) *Repository {
+func NewRepository(s Storage) *Repository {
 	return &Repository{Storage: s}
 }

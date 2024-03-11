@@ -5,9 +5,11 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	authorization "url-shortener"
 	"url-shortener/internal/config"
+	"url-shortener/pkg/handler"
 	"url-shortener/pkg/repository"
-	"url-shortener/pkg/storage"
+	"url-shortener/pkg/service"
 
 	"github.com/joho/godotenv"
 )
@@ -33,32 +35,22 @@ func main() {
 	log.Info("starting url-shortener", slog.String("env", cfg.Env))
 	log.Debug("debug messages enabled")
 
-	storage, err := storage.NewSQLStorage(cfg.StoragePath)
+	storage, err := repository.NewSQLStorage(cfg.StoragePath)
 	if err != nil {
 		log.Error("Failed to init storage ", err)
 		os.Exit(1)
 	}
 
 	repository := repository.NewRepository(storage)
+	services := service.NewService(repository)
+	handlers := handler.NewHandler(services)
 
-	err = repository.SaveURL("https://google.com", "google")
-	if err != nil {
-		log.Error("failed to save", err)
+	server := new(authorization.Server)
+
+	if err := server.Run(cfg.Address, cfg.Timeout, cfg.IdleTimeout, handlers.InitRoutes()); err != nil {
+		log.Error("Failed to run http server: ", err)
+		os.Exit(1)
 	}
-
-	url, err := repository.GetURL("google")
-	if err != nil {
-		log.Error("failed to get", err)
-	}
-	fmt.Println(url)
-
-	err = repository.DeleteURL("google")
-	if err != nil {
-		log.Error("failed to delete", err)
-	}
-	//TODO init router: gin
-
-	//TODO init server
 }
 
 func setupLogger(env string) *slog.Logger {

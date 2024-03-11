@@ -1,4 +1,4 @@
-package storage
+package repository
 
 const (
 	ErrURLExists   = "Error URL exists"
